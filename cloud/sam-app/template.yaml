@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  sam-app
+
+Transform:
+- AWS::Serverless-2016-10-31
+
+Resources:  
+  TweetStatsLogger:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.9
+      CodeUri: ./src/tweetStatsLogger
+      Architectures:
+        - x86_64
+      Handler: tweetStatsLogger.lambda_handler
+      Timeout: 120
+      Environment:
+        Variables:
+          AUTH_BEARER_CODE: "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
+          X_GUEST_TOKEN: "1757382692163969492"
+      Layers:
+        - !Ref TweetStatsLoggerLayer
+      Events:
+        TweetStatsLoggerEvent:
+            Type: ScheduleV2
+            Properties:
+                ScheduleExpression: rate(5 minute)
+
+  TweetStatsLoggerLayer:
+    Type: 'AWS::Serverless::LayerVersion'
+    Properties:
+      CompatibleRuntimes:
+        - python3.9
+      ContentUri: ./layer/tweetStatsLoggerLayer
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: python3.9
+
+  TweetStatsLoggerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${TweetStatsLogger}"
+      RetentionInDays: 7
